@@ -34,6 +34,8 @@ interface PersonExport {
   other_names: string | null
   avatar_url: string | null
   note: string | null
+  grave_address?: string | null
+  grave_note?: string | null
   // DB-managed fields (kept in export for traceability, stripped on import)
   created_at?: string
   updated_at?: string
@@ -123,7 +125,13 @@ function validateImportPayload(input: unknown, t: Translator): string | null {
     }
     if (!['male', 'female', 'other'].includes(String(row.gender)))
       return t('invalidGender')
-    for (const field of ['other_names', 'avatar_url', 'note']) {
+    for (const field of [
+      'other_names',
+      'avatar_url',
+      'note',
+      'grave_address',
+      'grave_note'
+    ]) {
       if (!isShortText(row[field], 2000)) return t('fieldTooLong', { field })
     }
   }
@@ -218,7 +226,9 @@ function sanitizePerson(
     generation: p.generation ?? null,
     other_names: p.other_names ?? null,
     avatar_url: p.avatar_url ?? null,
-    note: p.note ?? null
+    note: p.note ?? null,
+    grave_address: p.grave_address ?? null,
+    grave_note: p.grave_note ?? null
   }
 }
 
@@ -290,7 +300,7 @@ export async function exportData(
   try {
     allPersons = await fetchAll<PersonExport>(
       'persons',
-      'id, full_name, gender, birth_year, birth_month, birth_day, death_year, death_month, death_day, death_lunar_year, death_lunar_month, death_lunar_day, is_deceased, is_in_law, birth_order, generation, other_names, avatar_url, note, created_at, updated_at',
+      'id, full_name, gender, birth_year, birth_month, birth_day, death_year, death_month, death_day, death_lunar_year, death_lunar_month, death_lunar_day, is_deceased, is_in_law, birth_order, generation, other_names, avatar_url, note, grave_address, grave_note, created_at, updated_at',
       'created_at'
     )
     allRels = await fetchAll<RelationshipExport>(

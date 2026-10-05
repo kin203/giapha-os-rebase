@@ -90,6 +90,8 @@ CREATE TABLE IF NOT EXISTS public.persons (
   other_names TEXT,
   avatar_url TEXT,
   note TEXT,
+  grave_address TEXT,
+  grave_note TEXT,
   
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()

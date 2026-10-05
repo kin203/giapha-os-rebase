@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
 import React from 'react'
 
 import config from '@/app/config'
@@ -18,14 +17,9 @@ export default async function DashboardLayout({
 }) {
   const { t } = await getServerTranslations()
   const user = await getUser()
+  const profile = user ? await getProfile(user.id) : null
 
-  if (!user) {
-    redirect('/login')
-  }
-
-  const profile = await getProfile(user.id)
-
-  if (!profile?.is_active) {
+  if (user && !profile?.is_active) {
     return (
       <div className='flex min-h-screen flex-col bg-neutral font-sans text-primary'>
         <header className='sticky top-0 z-30 border-b border-stone-200 bg-white/80 transition-all duration-200'>

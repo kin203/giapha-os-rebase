@@ -110,6 +110,10 @@ export default function MemberForm({
   )
 
   const [note, setNote] = useState(initialData?.note || '')
+  const [graveAddress, setGraveAddress] = useState(
+    initialData?.grave_address || ''
+  )
+  const [graveNote, setGraveNote] = useState(initialData?.grave_note || '')
 
   // Private fields
   const [phoneNumber, setPhoneNumber] = useState(
@@ -307,56 +311,116 @@ export default function MemberForm({
       let currentAvatarUrl = avatarUrl
 
       // Update person data helper to avoid duplication
-      const getPersonData = (url: string | null) => ({
-        full_name: fullName,
-        gender,
-        birth_year: birthYear === '' ? null : Number(birthYear),
-        birth_month: birthMonth === '' ? null : Number(birthMonth),
-        birth_day: birthDay === '' ? null : Number(birthDay),
-        death_year:
-          isDeceased && finalDeathYear !== '' ? Number(finalDeathYear) : null,
-        death_month:
-          isDeceased && finalDeathMonth !== '' ? Number(finalDeathMonth) : null,
-        death_day:
-          isDeceased && finalDeathDay !== '' ? Number(finalDeathDay) : null,
-        death_lunar_year:
-          isDeceased && finalDeathLunarYear !== ''
-            ? Number(finalDeathLunarYear)
-            : null,
-        death_lunar_month:
-          isDeceased && finalDeathLunarMonth !== ''
-            ? Number(finalDeathLunarMonth)
-            : null,
-        death_lunar_day:
-          isDeceased && finalDeathLunarDay !== ''
-            ? Number(finalDeathLunarDay)
-            : null,
-        is_deceased: isDeceased,
-        is_in_law: isInLaw,
-        birth_order: birthOrder === '' ? null : Number(birthOrder),
-        generation: generation === '' ? null : Number(generation),
-        other_names: otherNames || null,
-        avatar_url: url,
-        note: note || null
-      })
+      const getPersonData = (
+        url: string | null,
+        includeGraveFields = true
+      ) => {
+        const data: Record<string, unknown> = {
+          full_name: fullName,
+          gender,
+          birth_year: birthYear === '' ? null : Number(birthYear),
+          birth_month: birthMonth === '' ? null : Number(birthMonth),
+          birth_day: birthDay === '' ? null : Number(birthDay),
+          death_year:
+            isDeceased && finalDeathYear !== '' ? Number(finalDeathYear) : null,
+          death_month:
+            isDeceased && finalDeathMonth !== '' ? Number(finalDeathMonth) : null,
+          death_day:
+            isDeceased && finalDeathDay !== '' ? Number(finalDeathDay) : null,
+          death_lunar_year:
+            isDeceased && finalDeathLunarYear !== ''
+              ? Number(finalDeathLunarYear)
+              : null,
+          death_lunar_month:
+            isDeceased && finalDeathLunarMonth !== ''
+              ? Number(finalDeathLunarMonth)
+              : null,
+          death_lunar_day:
+            isDeceased && finalDeathLunarDay !== ''
+              ? Number(finalDeathLunarDay)
+              : null,
+          is_deceased: isDeceased,
+          is_in_law: isInLaw,
+          birth_order: birthOrder === '' ? null : Number(birthOrder),
+          generation: generation === '' ? null : Number(generation),
+          other_names: otherNames || null,
+          avatar_url: url,
+          note: note || null
+        }
+
+        if (includeGraveFields) {
+          const trimmedAddress = graveAddress.trim()
+          const trimmedNote = graveNote.trim()
+
+          if (trimmedAddress) {
+            data.grave_address = trimmedAddress
+          } else if (isEditing && initialData?.grave_address) {
+            data.grave_address = null
+          }
+
+          if (trimmedNote) {
+            data.grave_note = trimmedNote
+          } else if (isEditing && initialData?.grave_note) {
+            data.grave_note = null
+          }
+        }
+
+        return data
+      }
 
       let currentPersonId = initialData?.id
 
+      const isSchemaCacheError = (err: { message?: string } | null) =>
+        Boolean(
+          err?.message &&
+            (err.message.includes('grave_address') ||
+              err.message.includes('grave_note') ||
+              err.message.includes('schema cache'))
+        )
+
       // For a new member, we must insert first to get the ID for the avatar filename
       if (!isEditing || !currentPersonId) {
-        const { data: newPerson, error: createError } = await supabase
+        let { data: newPerson, error: createError } = await supabase
           .from('persons')
-          .insert(getPersonData(currentAvatarUrl || null))
+          .insert(getPersonData(currentAvatarUrl || null, true))
           .select()
           .single()
+
+        if (createError && isSchemaCacheError(createError)) {
+          console.warn(
+            'Grave fields not found in DB schema cache. Retrying without grave fields:',
+            createError.message
+          )
+          const retry = await supabase
+            .from('persons')
+            .insert(getPersonData(currentAvatarUrl || null, false))
+            .select()
+            .single()
+          newPerson = retry.data
+          createError = retry.error
+        }
+
         if (createError) throw createError
         currentPersonId = newPerson.id
       } else {
         // Update existing member info first
-        const { error: updateError } = await supabase
+        let { error: updateError } = await supabase
           .from('persons')
-          .update(getPersonData(currentAvatarUrl || null))
+          .update(getPersonData(currentAvatarUrl || null, true))
           .eq('id', currentPersonId)
+
+        if (updateError && isSchemaCacheError(updateError)) {
+          console.warn(
+            'Grave fields not found in DB schema cache. Retrying without grave fields:',
+            updateError.message
+          )
+          const retry = await supabase
+            .from('persons')
+            .update(getPersonData(currentAvatarUrl || null, false))
+            .eq('id', currentPersonId)
+          updateError = retry.error
+        }
+
         if (updateError) throw updateError
       }
 
@@ -928,6 +992,40 @@ export default function MemberForm({
                           }
                           className={inputClasses}
                         />
+                      </div>
+                    </div>
+
+                    {/* Grave Information */}
+                    <div className='border-t border-stone-200/60 pt-4'>
+                      <h4 className='mb-3 font-serif text-base font-semibold text-stone-800'>
+                        {t('graveInfo')}
+                      </h4>
+                      <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+                        <div>
+                          <label className='mb-1.5 block text-sm font-medium text-stone-700'>
+                            {t('graveAddress')}
+                          </label>
+                          <input
+                            type='text'
+                            value={graveAddress}
+                            onChange={(e) => setGraveAddress(e.target.value)}
+                            placeholder={t('graveAddressPlaceholder')}
+                            className={inputClasses}
+                          />
+                        </div>
+
+                        <div>
+                          <label className='mb-1.5 block text-sm font-medium text-stone-700'>
+                            {t('graveNote')}
+                          </label>
+                          <input
+                            type='text'
+                            value={graveNote}
+                            onChange={(e) => setGraveNote(e.target.value)}
+                            placeholder={t('graveNotePlaceholder')}
+                            className={inputClasses}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>

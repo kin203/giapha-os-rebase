@@ -325,6 +325,32 @@ export default function MemberDetailContent({
                 </motion.div>
               )}
 
+              {/* Grave Card */}
+              {isDeceased && (person.grave_address || person.grave_note) && (
+                <motion.div
+                  variants={itemVariants}
+                  className='rounded-2xl border border-stone-200/60 bg-white/80 p-4 backdrop-blur-sm transition-all hover:border-amber-200/60'>
+                  <div className='mb-2 flex items-center gap-2'>
+                    <span className='size-2 rounded-full bg-amber-600 shadow-[0_0_8px_rgba(217,119,6,0.5)]'></span>
+                    <h3 className='text-base font-semibold text-stone-400'>
+                      {t('graveInfo')}
+                    </h3>
+                  </div>
+                  <div className='space-y-1.5 border-l-2 border-stone-100 pl-4'>
+                    {person.grave_address && (
+                      <p className='text-sm font-medium text-stone-800 sm:text-sm'>
+                        {person.grave_address}
+                      </p>
+                    )}
+                    {person.grave_note && (
+                      <p className='text-sm text-stone-500 italic'>
+                        {person.grave_note}
+                      </p>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+
               {/* Age Card */}
               {(() => {
                 const ageData = calculateAge(

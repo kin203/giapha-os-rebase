@@ -47,16 +47,23 @@ export async function updateSession(request: NextRequest) {
     data: { user }
   } = await supabase.auth.getUser()
 
-  // Protected routes
-  const protectedPaths = ['/dashboard']
+  // Protected routes (admin/management routes that require authentication)
+  const protectedPaths = [
+    '/dashboard/users',
+    '/dashboard/lineage',
+    '/dashboard/data',
+    '/dashboard/upgrade',
+    '/dashboard/members/new'
+  ]
   const isProtectedPath = protectedPaths.some((path) =>
     request.nextUrl.pathname.startsWith(path)
   )
 
   const isLoginPage = request.nextUrl.pathname.startsWith('/login')
+  const isDashboardPage = request.nextUrl.pathname.startsWith('/dashboard')
 
   // Check if DB schema is initialized by checking if profiles table exists
-  if (isProtectedPath || isLoginPage) {
+  if (isDashboardPage || isLoginPage) {
     const { error: profileError } = await supabase
       .from('profiles')
       .select('id')
@@ -73,7 +80,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (isProtectedPath && !user) {
-    // no user, potentially respond by redirecting the user to the login page
+    // no user, redirect to login page
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)

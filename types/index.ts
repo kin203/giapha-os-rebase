@@ -49,6 +49,8 @@ export interface Person {
   birth_order: number | null
   generation: number | null
   other_names: string | null
+  grave_address?: string | null
+  grave_note?: string | null
 }
 
 export interface Relationship {

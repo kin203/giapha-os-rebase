@@ -8,6 +8,7 @@ import {
   Database,
   GitMerge,
   Info,
+  LogIn,
   Network,
   UserCircle,
   Users
@@ -37,6 +38,17 @@ export default function HeaderMenu() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  if (!user) {
+    return (
+      <Link
+        href='/login'
+        className='inline-flex items-center gap-2 rounded-xl border border-stone-800 bg-stone-900 px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-stone-800 hover:-translate-y-0.5 active:translate-y-0 shadow-xs'>
+        <LogIn className='size-4 text-amber-400' />
+        <span>{t('login')}</span>
+      </Link>
+    )
+  }
 
   const links = [
     {

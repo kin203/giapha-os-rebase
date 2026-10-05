@@ -1,10 +1,16 @@
+import { LogIn } from 'lucide-react'
+import Link from 'next/link'
+
 import Footer from '@/components/Footer'
 import LandingHero from '@/components/LandingHero'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
+import { getServerTranslations } from '@/lib/i18n/server'
 
 import config from './config'
 
-export default function HomePage() {
+export default async function HomePage() {
+  const { t } = await getServerTranslations()
+
   return (
     <div className='relative flex min-h-screen flex-col overflow-hidden bg-neutral selection:bg-amber-200 selection:text-amber-900'>
       {/* Decorative background grid and blurs */}
@@ -16,8 +22,14 @@ export default function HomePage() {
         <div className='absolute top-[20%] left-[-10%] h-[60vw] max-h-[800px] w-[60vw] max-w-[800px] rounded-full bg-rose-200/20 mix-blend-multiply blur-[120px]' />
       </div>
 
-      <div className='absolute top-6 right-6 z-20'>
+      <div className='absolute top-6 right-6 z-20 flex items-center gap-3'>
         <LanguageSwitcher />
+        <Link
+          href='/login'
+          className='inline-flex items-center gap-2 rounded-xl border border-stone-800 bg-stone-900 px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-stone-800 hover:-translate-y-0.5 active:translate-y-0 shadow-xs'>
+          <LogIn className='size-4 text-amber-400' />
+          <span>{t('login')}</span>
+        </Link>
       </div>
 
       <main className='relative z-10 flex w-full flex-1 flex-col items-center justify-center px-4 py-20 md:py-32'>

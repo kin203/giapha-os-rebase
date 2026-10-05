@@ -324,7 +324,7 @@ export const messages = {
     landingBadge: 'Nền tảng gia phả hiện đại & bảo mật',
     landingDescription:
       'Gìn giữ và lưu truyền những giá trị, cội nguồn và truyền thống tốt đẹp của dòng họ cho các thế hệ mai sau.',
-    landingCta: 'Đăng nhập để xem thông tin',
+    landingCta: 'Khám phá gia phả',
     featureMembers: 'Quản lý thành viên',
     featureMembersDescription:
       'Cập nhật thông tin chi tiết, tiểu sử và hình ảnh của từng thành viên trong dòng họ một cách nhanh chóng và bảo mật.',
@@ -458,6 +458,11 @@ export const messages = {
       '* Nhập ngày dương lịch hoặc ngày âm lịch. Hệ thống sẽ tự tính toán và điền phần còn lại.',
     lunarDeathDate: 'Ngày mất (Âm lịch)',
     solarDeathDate: 'Ngày mất (Dương lịch)',
+    graveInfo: 'Thông tin mộ phần',
+    graveAddress: 'Địa chỉ mộ phần',
+    graveAddressPlaceholder: 'Ví dụ: Nghĩa trang Đông Ngạc, khu B, hàng 3',
+    graveNote: 'Chỉ dẫn',
+    graveNotePlaceholder: 'Ví dụ: Từ cổng chính đi thẳng 100m, rẽ trái...',
     note: 'Ghi chú',
     notePlaceholder: 'Thêm thông tin bổ sung, tiểu sử...',
     privateInfo: 'Thông tin riêng tư',
@@ -1115,7 +1120,7 @@ export const messages = {
     landingBadge: 'A modern and secure family tree platform',
     landingDescription:
       'Preserve and pass down your family values, roots, and traditions to future generations.',
-    landingCta: 'Log in to view information',
+    landingCta: 'Explore family tree',
     featureMembers: 'Manage members',
     featureMembersDescription:
       'Quickly and securely update detailed information, biographies, and photos for every family member.',
@@ -1249,6 +1254,11 @@ export const messages = {
       '* Enter a solar or lunar date. The system will calculate and fill in the other date automatically.',
     lunarDeathDate: 'Lunar death date',
     solarDeathDate: 'Solar death date',
+    graveInfo: 'Grave information',
+    graveAddress: 'Grave location',
+    graveAddressPlaceholder: 'Example: Dong Ngac Cemetery, Block B, Row 3',
+    graveNote: 'Directions',
+    graveNotePlaceholder: 'Example: From main gate go 100m straight, turn left...',
     note: 'Notes',
     notePlaceholder: 'Add additional information or biography...',
     privateInfo: 'Private information',
