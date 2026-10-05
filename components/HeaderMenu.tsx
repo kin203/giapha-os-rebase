@@ -127,35 +127,38 @@ export default function HeaderMenu() {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            initial={{ opacity: 0, y: 8, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            exit={{ opacity: 0, y: 8, scale: 0.96 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
-            className='absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-3xl border border-border bg-surface py-2'>
-            <div className='border-b border-stone-100 bg-stone-50/50 px-4 py-3'>
-              <p className='mb-0.5 text-sm font-medium text-stone-400'>
+            className='absolute right-0 z-50 mt-2 flex max-h-[calc(100vh-80px)] w-64 flex-col overflow-hidden rounded-2xl border border-stone-200/80 bg-white/95 shadow-xl backdrop-blur-xl'>
+            {/* Account Header */}
+            <div className='shrink-0 border-b border-stone-100 bg-stone-50/70 px-4 py-3'>
+              <p className='text-xs font-semibold uppercase tracking-wider text-stone-400'>
                 {t('account')}
               </p>
-              <p className='truncate text-sm font-medium text-stone-900'>
+              <p className='mt-0.5 truncate text-sm font-semibold text-stone-900'>
                 {userEmail}
               </p>
             </div>
-            <div className='py-1'>
+
+            {/* Scrollable Items Area */}
+            <div className='custom-scrollbar flex-1 overflow-y-auto p-1.5 space-y-0.5'>
               {links.map(({ href, icon: Icon, label, hover }) => (
                 <Link
                   key={href}
                   href={href}
                   onClick={() => setIsOpen(false)}
-                  className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 transition-colors ${hover}`}>
-                  <Icon className='size-4' />
-                  {label}
+                  className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-stone-700 transition-all ${hover}`}>
+                  <Icon className='size-4 shrink-0 text-stone-500' />
+                  <span className='truncate'>{label}</span>
                 </Link>
               ))}
 
               {isAdmin && (
                 <>
-                  <div className='mt-1 px-4 py-2'>
-                    <p className='text-sm font-medium text-rose-500'>
+                  <div className='my-1 border-t border-stone-100 px-3 pt-2 pb-1'>
+                    <p className='text-xs font-semibold uppercase tracking-wider text-rose-500'>
                       {t('admin')}
                     </p>
                   </div>
@@ -164,22 +167,27 @@ export default function HeaderMenu() {
                       key={href}
                       href={href}
                       onClick={() => setIsOpen(false)}
-                      className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 transition-colors ${hover}`}>
-                      <Icon className='size-4' />
-                      {label}
+                      className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-stone-700 transition-all ${hover}`}>
+                      <Icon className='size-4 shrink-0 text-stone-500' />
+                      <span className='truncate'>{label}</span>
                     </Link>
                   ))}
                 </>
               )}
 
-              <div className='mx-4 my-1 h-px bg-stone-100' />
-              <Link
-                href='/about'
-                onClick={() => setIsOpen(false)}
-                className='flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 transition-colors hover:bg-rose-50 hover:text-rose-700'>
-                <Info className='size-4' />
-                {t('about')}
-              </Link>
+              <div className='my-1 border-t border-stone-100 pt-1'>
+                <Link
+                  href='/about'
+                  onClick={() => setIsOpen(false)}
+                  className='flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-stone-700 transition-all hover:bg-stone-100 hover:text-stone-900'>
+                  <Info className='size-4 shrink-0 text-stone-500' />
+                  <span className='truncate'>{t('about')}</span>
+                </Link>
+              </div>
+            </div>
+
+            {/* Fixed Logout Button at Bottom */}
+            <div className='shrink-0 border-t border-stone-100 bg-stone-50/50 p-1.5'>
               <LogoutButton />
             </div>
           </motion.div>
