@@ -67,12 +67,18 @@ interface CustomEventExport {
   created_by: string | null
 }
 
+interface PersonBiographyExport {
+  person_id: string
+  content_html: string
+}
+
 interface BackupPayload {
   version: number
   timestamp: string
   persons: PersonExport[]
   relationships: RelationshipExport[]
   person_details_private?: PersonDetailsPrivateExport[]
+  person_biographies?: PersonBiographyExport[]
   custom_events?: CustomEventExport[]
 }
 
@@ -82,6 +88,7 @@ const MAX_PERSONS = 10000
 const MAX_RELATIONSHIPS = 30000
 const MAX_PRIVATE_DETAILS = 10000
 const MAX_CUSTOM_EVENTS = 10000
+
 
 function isShortText(value: unknown, maxLength: number) {
   return (
@@ -295,6 +302,7 @@ export async function exportData(
   let allPersons: PersonExport[] = []
   let allRels: RelationshipExport[] = []
   let allPrivateDetails: PersonDetailsPrivateExport[] = []
+  let allBiographies: PersonBiographyExport[] = []
   let allCustomEvents: CustomEventExport[] = []
 
   try {
@@ -314,6 +322,11 @@ export async function exportData(
       'person_id, phone_number, occupation, current_residence',
       'person_id'
     )
+    allBiographies = await fetchAll<PersonBiographyExport>(
+      'person_biographies',
+      'person_id, content_html',
+      'person_id'
+    )
     allCustomEvents = await fetchAll<CustomEventExport>(
       'custom_events',
       'id, name, content, event_date, location, created_by',
@@ -327,6 +340,7 @@ export async function exportData(
   let exportPersons = allPersons
   let exportRels = allRels
   let exportPrivateDetails = allPrivateDetails
+  let exportBiographies = allBiographies
   const exportCustomEvents = allCustomEvents
 
   // If a root person is selected, filter the export to only their subtree
@@ -379,15 +393,19 @@ export async function exportData(
     exportPrivateDetails = exportPrivateDetails.filter((d) =>
       includedPersonIds.has(d.person_id)
     )
+    exportBiographies = exportBiographies.filter((b) =>
+      includedPersonIds.has(b.person_id)
+    )
     // custom_events are not person-scoped, so export all when subtree is selected
   }
 
   return {
-    version: 3, // v3: adds death_lunar_*, person_details_private, relationship note, custom_events
+    version: 3, // v3: adds death_lunar_*, person_details_private, person_biographies, relationship note, custom_events
     timestamp: new Date().toISOString(),
     persons: exportPersons,
     relationships: exportRels,
     person_details_private: exportPrivateDetails,
+    person_biographies: exportBiographies,
     custom_events: exportCustomEvents
   }
 }
@@ -398,9 +416,10 @@ export async function importData(
   importPayload:
     | BackupPayload
     | {
-        persons: PersonExport[]
+        persons: (PersonExport & { biography?: string })[]
         relationships: Relationship[]
         person_details_private?: PersonDetailsPrivateExport[]
+        person_biographies?: PersonBiographyExport[]
         custom_events?: CustomEventExport[]
       }
 ) {
@@ -450,7 +469,18 @@ export async function importData(
       })
     }
 
-  // 4. Xoá persons
+  // 4. Xoá person_biographies (FK constraint on persons)
+  const { error: delBioError } = await supabase
+    .from('person_biographies')
+    .delete()
+    .neq('person_id', '00000000-0000-0000-0000-000000000000')
+
+  if (delBioError)
+    return {
+      error: `Lỗi xóa dữ liệu tiểu sử: ${delBioError.message}`
+    }
+
+  // 5. Xoá persons
   const { error: delPersonsError } = await supabase
     .from('persons')
     .delete()
@@ -461,7 +491,7 @@ export async function importData(
       error: t('deletePersonsError', { error: delPersonsError.message })
     }
 
-  // 5. Insert persons (sanitized — chỉ giữ các field schema hiện tại)
+  // 6. Insert persons (sanitized — chỉ giữ các field schema hiện tại)
   const CHUNK = 200
   const persons = importPayload.persons.map(sanitizePerson)
 
@@ -477,7 +507,7 @@ export async function importData(
       }
   }
 
-  // 6. Insert relationships (stripped of id/created_at to avoid conflicts)
+  // 7. Insert relationships (stripped of id/created_at to avoid conflicts)
   // Filter out self-relationships to avoid "no_self_relationship" constraint violation
   const relationships = importPayload.relationships
     .filter((r) => r.person_a !== r.person_b)
@@ -495,7 +525,7 @@ export async function importData(
       }
   }
 
-  // 7. Insert person_details_private (if present in payload)
+  // 8. Insert person_details_private (if present in payload)
   let privateDetailsCount = 0
   const privateDetails = importPayload.person_details_private ?? []
   if (privateDetails.length > 0) {
@@ -515,7 +545,45 @@ export async function importData(
     privateDetailsCount = privateDetails.length
   }
 
-  // 8. Insert custom_events (if present in payload, strip created_by)
+  // 9. Insert person_biographies (from payload OR migrated from legacy persons.biography)
+  let biographiesCount = 0
+  const bioList: PersonBiographyExport[] = []
+
+  // Add explicit person_biographies from payload
+  if (importPayload.person_biographies && importPayload.person_biographies.length > 0) {
+    bioList.push(...importPayload.person_biographies)
+  }
+
+  // Migrate legacy persons.biography if present
+  importPayload.persons.forEach((p) => {
+    const legacyBio = (p as unknown as Record<string, unknown>).biography
+    if (typeof legacyBio === 'string' && legacyBio.trim() !== '') {
+      if (!bioList.some((b) => b.person_id === p.id)) {
+        bioList.push({
+          person_id: p.id,
+          content_html: legacyBio
+        })
+      }
+    }
+  })
+
+
+
+  if (bioList.length > 0) {
+    for (let i = 0; i < bioList.length; i += CHUNK) {
+      const chunk = bioList.slice(i, i + CHUNK)
+      const { error } = await supabase
+        .from('person_biographies')
+        .insert(chunk)
+      if (error)
+        return {
+          error: `Lỗi import tiểu sử: ${error.message}`
+        }
+    }
+    biographiesCount = bioList.length
+  }
+
+  // 10. Insert custom_events (if present in payload, strip created_by)
   let customEventsCount = 0
   const customEvents = (importPayload.custom_events ?? []).map(
     sanitizeCustomEvent
@@ -545,7 +613,9 @@ export async function importData(
       persons: persons.length,
       relationships: relationships.length,
       person_details_private: privateDetailsCount,
+      person_biographies: biographiesCount,
       custom_events: customEventsCount
     }
   }
 }
+

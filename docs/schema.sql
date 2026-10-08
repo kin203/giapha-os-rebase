@@ -89,9 +89,7 @@ CREATE TABLE IF NOT EXISTS public.persons (
   generation INT,
   other_names TEXT,
   avatar_url TEXT,
-  note TEXT,
-  grave_address TEXT,
-  grave_note TEXT,
+  note TEXT, -- LEGACY/DEPRECATED: Retained for backward compatibility. Use person_biographies for public rich biography or admin_note for private notes.
   
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -103,6 +101,15 @@ CREATE TABLE IF NOT EXISTS public.person_details_private (
   phone_number TEXT,
   occupation TEXT,
   current_residence TEXT,
+  admin_note TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- PERSON_BIOGRAPHIES (Dedicated 0..1 public biography table)
+CREATE TABLE IF NOT EXISTS public.person_biographies (
+  person_id UUID REFERENCES public.persons(id) ON DELETE CASCADE PRIMARY KEY,
+  content_html TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -172,6 +179,7 @@ ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_approval_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.persons ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.person_details_private ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.person_biographies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.relationships ENABLE ROW LEVEL SECURITY;
 
 -- Helper function to check if user is admin
@@ -256,6 +264,19 @@ CREATE POLICY "Admins can view private details" ON public.person_details_private
 DROP POLICY IF EXISTS "Admins can manage private details" ON public.person_details_private;
 CREATE POLICY "Admins can manage private details" ON public.person_details_private FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
 
+-- PERSON_BIOGRAPHIES POLICIES
+DROP POLICY IF EXISTS "Active users can view person_biographies" ON public.person_biographies;
+CREATE POLICY "Active users can view person_biographies" ON public.person_biographies FOR SELECT TO authenticated USING (public.is_active_user());
+
+DROP POLICY IF EXISTS "Admins and Editors can insert person_biographies" ON public.person_biographies;
+CREATE POLICY "Admins and Editors can insert person_biographies" ON public.person_biographies FOR INSERT TO authenticated WITH CHECK (public.is_admin() OR public.is_editor());
+
+DROP POLICY IF EXISTS "Admins and Editors can update person_biographies" ON public.person_biographies;
+CREATE POLICY "Admins and Editors can update person_biographies" ON public.person_biographies FOR UPDATE TO authenticated USING (public.is_admin() OR public.is_editor()) WITH CHECK (public.is_admin() OR public.is_editor());
+
+DROP POLICY IF EXISTS "Admins and Editors can delete person_biographies" ON public.person_biographies;
+CREATE POLICY "Admins and Editors can delete person_biographies" ON public.person_biographies FOR DELETE TO authenticated USING (public.is_admin() OR public.is_editor());
+
 -- RELATIONSHIPS POLICIES
 DROP POLICY IF EXISTS "Enable read access for authenticated users" ON public.relationships;
 DROP POLICY IF EXISTS "Active users can view relationships" ON public.relationships;
@@ -305,6 +326,9 @@ CREATE TRIGGER tr_persons_updated_at BEFORE UPDATE ON public.persons FOR EACH RO
 
 DROP TRIGGER IF EXISTS tr_person_details_private_updated_at ON public.person_details_private;
 CREATE TRIGGER tr_person_details_private_updated_at BEFORE UPDATE ON public.person_details_private FOR EACH ROW EXECUTE PROCEDURE public.handle_updated_at();
+
+DROP TRIGGER IF EXISTS tr_person_biographies_updated_at ON public.person_biographies;
+CREATE TRIGGER tr_person_biographies_updated_at BEFORE UPDATE ON public.person_biographies FOR EACH ROW EXECUTE PROCEDURE public.handle_updated_at();
 
 DROP TRIGGER IF EXISTS tr_relationships_updated_at ON public.relationships;
 CREATE TRIGGER tr_relationships_updated_at BEFORE UPDATE ON public.relationships FOR EACH ROW EXECUTE PROCEDURE public.handle_updated_at();
@@ -699,6 +723,9 @@ GRANT ALL ON public.persons TO service_role;
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.person_details_private TO authenticated;
 GRANT ALL ON public.person_details_private TO service_role;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.person_biographies TO authenticated;
+GRANT ALL ON public.person_biographies TO service_role;
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.relationships TO authenticated;
 GRANT ALL ON public.relationships TO service_role;

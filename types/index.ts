@@ -53,6 +53,13 @@ export interface Person {
   grave_note?: string | null
 }
 
+export interface PersonBiography {
+  person_id: string
+  content_html: string
+  created_at: string
+  updated_at: string
+}
+
 export interface Relationship {
   id: string
   type: RelationshipType
@@ -62,6 +69,7 @@ export interface Relationship {
   created_at: string
   updated_at: string
 }
+
 
 // Helper types for UI
 export interface PersonWithDetails extends Person {

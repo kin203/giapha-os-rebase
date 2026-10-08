@@ -13,8 +13,11 @@ const eslintConfig = defineConfig([
     '.next/**',
     'out/**',
     'build/**',
+    'coverage/**',
+    'scratch/**',
     'next-env.d.ts'
   ])
 ])
+
 
 export default eslintConfig
