@@ -51,7 +51,7 @@ export default function BiographyEditor({
     content: initialContent,
     editable: !readOnly,
     immediatelyRender: false,
-    onUpdate: ({ editor }) => {
+    onUpdate: ({ editor }: { editor: Parameters<NonNullable<Parameters<typeof useEditor>[0]>['onUpdate']>[0]['editor'] }) => {
       if (onChange) {
         onChange(editor.getHTML())
       }

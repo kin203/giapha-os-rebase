@@ -1,4 +1,4 @@
-import DOMPurify from 'isomorphic-dompurify'
+import DOMPurify from 'dompurify'
 
 /**
  * Checks if HTML is effectively empty (e.g., `<p></p>`, `<p><br></p>` or whitespace only).
