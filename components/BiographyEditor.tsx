@@ -2,7 +2,7 @@
 
 import LinkExtension from '@tiptap/extension-link'
 import UnderlineExtension from '@tiptap/extension-underline'
-import { EditorContent, useEditor } from '@tiptap/react'
+import { EditorContent, useEditor, type Editor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import {
   Bold,
@@ -51,7 +51,7 @@ export default function BiographyEditor({
     content: initialContent,
     editable: !readOnly,
     immediatelyRender: false,
-    onUpdate: ({ editor }: { editor: Parameters<NonNullable<Parameters<typeof useEditor>[0]>['onUpdate']>[0]['editor'] }) => {
+    onUpdate: ({ editor }: { editor: Editor }) => {
       if (onChange) {
         onChange(editor.getHTML())
       }
